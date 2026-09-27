@@ -2,14 +2,15 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 
 const USER_SESSION_COOKIE = "user_session";
-const USER_SESSION_SECRET = process.env.USER_SESSION_SECRET;
 
 function getSessionSecret(): string {
-  if (!USER_SESSION_SECRET) {
-    throw new Error("USER_SESSION_SECRET is not defined in .env");
+  const secret = process.env.USER_SESSION_SECRET;
+
+  if (!secret) {
+    throw new Error("USER_SESSION_SECRET is not defined");
   }
 
-  return USER_SESSION_SECRET;
+  return secret;
 }
 
 function signUserId(userId: string): string {
@@ -55,17 +56,13 @@ function verifySessionValue(value: string): string | null {
 export async function setUserSession(userId: string) {
   const cookieStore = await cookies();
 
-  cookieStore.set(
-    USER_SESSION_COOKIE,
-    createSessionValue(userId),
-    {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    }
-  );
+  cookieStore.set(USER_SESSION_COOKIE, createSessionValue(userId), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
 }
 
 export async function getUserSession(): Promise<string | null> {
@@ -82,6 +79,5 @@ export async function getUserSession(): Promise<string | null> {
 
 export async function clearUserSession() {
   const cookieStore = await cookies();
-
   cookieStore.delete(USER_SESSION_COOKIE);
 }
