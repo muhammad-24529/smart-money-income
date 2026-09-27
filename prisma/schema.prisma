@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INVESTMENT
+  DAILY_INCOME
+  REFERRAL_COMMISSION
+  PROMO_REWARD
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  EASYPAISA
+  JAZZCASH
+  BINANCE_USDT_TRC20
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phone        String?
+  passwordHash String
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+
+  balance      Decimal    @default(0) @db.Decimal(18, 2)
+  referralCode String     @unique
+
+  referredById String?
+  referredBy   User?      @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals    User[]     @relation("UserReferrals")
+
+  investments   Investment[]
+  transactions  Transaction[]
+  deposits      Deposit[]
+  withdrawals   Withdrawal[]
+  notifications Notification[]
+
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+
+  referralCommissions ReferralCommission[] @relation("Referrer")
+  referredCommissions ReferralCommission[] @relation("ReferredUser")
+
+  promoCodeUsages PromoCodeUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InvestmentPlan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  amount      Decimal  @db.Decimal(18, 2)
+  duration    Int
+  dailyIncome Decimal  @db.Decimal(18, 2)
+  active      Boolean  @default(true)
+
+  investments Investment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Investment {
+  id           String           @id @default(cuid())
+  userId       String
+  planId       String
+
+  amount       Decimal          @db.Decimal(18, 2)
+  dailyIncome  Decimal          @db.Decimal(18, 2)
+  durationDays Int
+
+  startAt      DateTime
+  lastIncomeAt DateTime?
+  endAt        DateTime?
+
+  status InvestmentStatus @default(ACTIVE)
+
+  user User           @relation(fields: [userId], references: [id])
+  plan InvestmentPlan  @relation(fields: [planId], references: [id])
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Deposit {
+  id            String            @id @default(cuid())
+  userId        String
+  amount        Decimal           @db.Decimal(18, 2)
+  method        PaymentMethod
+  referenceId   String?
+  screenshotUrl String?
+  status        TransactionStatus @default(PENDING)
+  adminNote     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Withdrawal {
+  id          String            @id @default(cuid())
+  userId      String
+  amount      Decimal           @db.Decimal(18, 2)
+  method      PaymentMethod
+  accountInfo String
+  referenceId String?
+  status      TransactionStatus @default(PENDING)
+  adminNote   String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id           String            @id @default(cuid())
+  userId       String
+  investmentId String?
+  type         TransactionType
+  amount       Decimal           @db.Decimal(18, 2)
+  description  String?
+  status       TransactionStatus @default(COMPLETED)
+
+  user       User        @relation(fields: [userId], references: [id])
+  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
+
+model ReferralCommission {
+  id             String            @id @default(cuid())
+  referrerId     String
+  referredUserId String
+  amount         Decimal           @db.Decimal(18, 2)
+  percentage     Decimal           @default(10) @db.Decimal(5, 2)
+  status         TransactionStatus @default(PENDING)
+
+  referrer     User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser User @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([referrerId, referredUserId])
+}
+
+model PromoCode {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  bonusAmount       Decimal  @default(0) @db.Decimal(18, 2)
+  bonusPercent      Decimal  @default(0) @db.Decimal(5, 2)
+  requiredReferrals Int      @default(0)
+  maxUses           Int?
+  usedCount         Int      @default(0)
+  active            Boolean  @default(true)
+
+  usages PromoCodeUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PromoCodeUsage {
+  id           String   @id @default(cuid())
+  promoCodeId  String
+  userId       String
+  rewardAmount Decimal  @db.Decimal(18, 2)
+  createdAt    DateTime @default(now())
+
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, userId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  senderId   String?
+  receiverId String?
+  message    String
+  isRead     Boolean  @default(false)
+
+  sender   User? @relation("SentMessages", fields: [senderId], references: [id], onDelete: SetNull)
+  receiver User? @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id      String  @id @default(cuid())
+  userId  String
+  title   String
+  message String
+  isRead  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id       String  @id @default(cuid())
+  userId   String?
+  action   String
+  entity   String
+  entityId String?
+  details  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}

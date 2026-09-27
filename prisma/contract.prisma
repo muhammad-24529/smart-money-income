@@ -1,0 +1,245 @@
+// use prisma-8
+model User {
+  id                  String               @id @default(uuid())
+  name                String
+  email               String               @unique
+  password            String
+  balance             Int                  @default(0)
+  isActive             Boolean              @default(true)
+
+  referralCode        String?              @unique
+  referredById        String?
+
+  deposits            Deposit[]
+  withdrawals         Withdrawal[]
+  investments         Investment[]
+  transactions        Transaction[]
+  referralCommissions ReferralCommission[] @relation("Referrer")
+  referredCommissions ReferralCommission[] @relation("ReferredUser")
+  chatMessages        ChatMessage[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  promoCodeUsages     PromoCodeUsage[]
+
+  referredBy          User?                @relation(
+    "UserReferrals",
+    fields: [referredById],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  referrals            User[]              @relation("UserReferrals")
+}
+
+model InvestmentPlan {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  amount       Int
+  durationDays Int
+  dailyIncome  Int
+  active       Boolean      @default(true)
+
+  investments Investment[]
+}
+
+model Deposit {
+  id            String   @id @default(uuid())
+  userId        String
+  paymentMethod String
+  amount        Int
+  pkrAmount     Int
+  usdtRate      Int      @default(285)
+  referenceId   String
+  screenshotUrl String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model Withdrawal {
+  id            String @id @default(uuid())
+  userId        String
+  paymentMethod String
+  amount        Int
+  accountInfo   String
+  referenceId   String?
+  status        String @default("PENDING")
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model Investment {
+  id           String   @id @default(uuid())
+  userId       String
+  planId       String
+  amount       Int
+  dailyIncome  Int
+  durationDays Int
+  startAt      DateTime?
+  lastIncomeAt DateTime?
+  status       String   @default("ACTIVE")
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  plan InvestmentPlan @relation(
+    fields: [planId],
+    references: [id]
+  )
+
+  transactions Transaction[]
+
+  @@unique([userId, planId])
+}
+
+model Transaction {
+  id           String @id @default(uuid())
+  userId       String
+  investmentId String?
+  type         String
+  amount       Int
+  description  String?
+  status       String @default("COMPLETED")
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  investment Investment? @relation(
+    fields: [investmentId],
+    references: [id],
+    onDelete: SetNull
+  )
+}
+
+model PromoCode {
+  id                String   @id @default(uuid())
+  code              String   @unique
+  bonusAmount       Int      @default(0)
+  bonusPercent      Int      @default(0)
+  requiredReferrals Int      @default(0)
+  maxUses           Int?
+  usedCount         Int      @default(0)
+  active            Boolean  @default(true)
+
+  usages PromoCodeUsage[]
+}
+model PromoCodeUsage {
+  id           String   @id @default(uuid())
+  promoCodeId  String
+  userId       String
+  rewardAmount Int
+  createdAt    DateTime @default(now())
+
+  promoCode PromoCode @relation(
+    fields: [promoCodeId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([promoCodeId, userId])
+}
+
+model ReferralCommission {
+  id             String @id @default(uuid())
+  referrerId     String
+  referredUserId String
+  amount         Int
+  percentage     Int    @default(10)
+  status         String @default("PENDING")
+
+  referrer User @relation(
+    "Referrer",
+    fields: [referrerId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  referredUser User @relation(
+    "ReferredUser",
+    fields: [referredUserId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model PaymentMethod {
+  id           String  @id @default(uuid())
+  name         String
+  methodType   String
+  accountInfo  String
+  instructions String?
+  active       Boolean @default(true)
+}
+
+model ChatMessage {
+  id         String  @id @default(uuid())
+  userId     String
+  senderType String
+  message    String
+  isRead     Boolean  @default(false)
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model Notification {
+  id      String  @id @default(uuid())
+  userId  String
+  title   String
+  message String
+  isRead  Boolean @default(false)
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model AuditLog {
+  id       String  @id @default(uuid())
+  userId   String?
+  action   String
+  entity   String
+  entityId String?
+  details  String?
+
+  user User? @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: SetNull
+  )
+}
+
+model News {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
