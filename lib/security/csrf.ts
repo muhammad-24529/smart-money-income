@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 const ALLOWED_ORIGINS = new Set(
   [
     process.env.NEXT_PUBLIC_APP_URL,
+    "https://smart-money-income.vercel.app",
     "http://localhost:3000",
     "http://localhost:3001",
   ].filter(Boolean)
