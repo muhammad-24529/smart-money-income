@@ -2,8 +2,7 @@ import { validateRequestOrigin } from "@/lib/security/csrf";
 import { NextResponse } from "next/server";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
+import { put } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
@@ -342,21 +341,6 @@ if (originError) {
       );
     }
 
-    const uploadDirectory =
-      path.join(
-        process.cwd(),
-        "private",
-        "uploads",
-        "deposits"
-      );
-
-    await mkdir(
-      uploadDirectory,
-      {
-        recursive: true,
-      }
-    );
-
     const safeUserId =
       userId.replace(
         /[^a-zA-Z0-9_-]/g,
@@ -366,27 +350,21 @@ if (originError) {
     const uniqueName =
       `deposit-${safeUserId}-${Date.now()}-${crypto.randomUUID()}${extension}`;
 
-    const filePath =
-      path.join(
-        uploadDirectory,
-        uniqueName
-      );
-
     const fileBuffer =
       Buffer.from(
         await screenshot.arrayBuffer()
       );
 
-    await writeFile(
-      filePath,
-      fileBuffer
+    const blob = await put(
+      `deposits/${uniqueName}`,
+      fileBuffer,
+      {
+        access: "private",
+        contentType: screenshot.type,
+      }
     );
 
-    // Keep only the filename/path identifier in DB.
-    // The actual file is stored outside public/.
-    const screenshotUrl =
-      `/private/uploads/deposits/${uniqueName}`;
-
+    const screenshotUrl = blob.url;
     // =========================
     // CREATE PENDING DEPOSIT
     // =========================
@@ -508,3 +486,6 @@ if (originError) {
     );
   }
 }
+
+
+
