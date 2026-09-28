@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -959,7 +959,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-slate-50">
         <div className="flex min-h-screen items-center justify-center px-4">
           <div className="text-center">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
@@ -979,7 +979,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-slate-50">
         <div className="flex min-h-screen items-center justify-center px-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 text-center shadow-lg sm:p-8">
             <h2 className="text-2xl font-bold text-red-600">
@@ -1015,17 +1015,17 @@ export default function DashboardPage() {
       : "";
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-gray-50">
+    <main className="min-h-screen overflow-x-hidden bg-slate-50">
 
       {/* ================= HEADER ================= */}
 
-      <header className="border-b bg-white shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between lg:px-8">
 
           <div className="min-w-0">
             <a
               href="/dashboard"
-              className="block truncate text-xl font-bold text-blue-600 sm:text-2xl"
+              className="block truncate text-xl font-extrabold tracking-tight text-slate-900 transition hover:text-blue-600 sm:text-2xl"
             >
               Smart Money Income
             </a>
@@ -1049,7 +1049,7 @@ export default function DashboardPage() {
                       !current
                   )
                 }
-                className="relative rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 sm:px-4"
+                className="relative rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-slate-50 sm:px-4"
                 aria-label="Notifications"
               >
                 Notifications
@@ -1146,7 +1146,7 @@ export default function DashboardPage() {
                                 );
                               }
                             }}
-                            className={`block w-full border-b px-4 py-4 text-left transition last:border-b-0 hover:bg-gray-50 sm:px-5 ${
+                            className={`block w-full border-b px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 sm:px-5 ${
                               notification.isRead
                                 ? "bg-white"
                                 : "bg-blue-50"
@@ -1347,7 +1347,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6">
             <p className="text-sm text-gray-500">
               Wallet Balance
             </p>
@@ -1361,7 +1361,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6">
             <p className="text-sm text-gray-500">
               Referral Income
             </p>
@@ -1375,7 +1375,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6">
             <p className="text-sm text-gray-500">
               Total Investment
             </p>
@@ -1389,7 +1389,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6">
             <p className="text-sm text-gray-500">
               Daily Income
             </p>
@@ -1411,21 +1411,21 @@ export default function DashboardPage() {
 
           <a
             href="/deposit"
-            className="rounded-2xl bg-green-600 p-4 text-center font-bold text-white shadow-sm transition hover:bg-green-700 sm:p-5"
+            className="rounded-2xl bg-green-600 p-4 text-center font-bold text-white shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-green-700 hover:shadow-md sm:p-5"
           >
             + Deposit Money
           </a>
 
           <a
             href="/plans"
-            className="rounded-2xl bg-blue-600 p-4 text-center font-bold text-white shadow-sm transition hover:bg-blue-700 sm:p-5"
+            className="rounded-2xl bg-blue-600 p-4 text-center font-bold text-white shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-blue-700 hover:shadow-md sm:p-5"
           >
             View Investment Plans
           </a>
 
           <a
             href="/withdraw"
-            className="rounded-2xl bg-gray-900 p-4 text-center font-bold text-white shadow-sm transition hover:bg-gray-800 sm:p-5"
+            className="rounded-2xl bg-slate-900 p-4 text-center font-bold text-white shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-slate-800 hover:shadow-md sm:p-5"
           >
             Withdraw Money
           </a>
@@ -1434,7 +1434,7 @@ export default function DashboardPage() {
 
         {/* ================= REFERRAL ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
             Referral Program
@@ -1467,7 +1467,7 @@ export default function DashboardPage() {
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
 
-            <div className="rounded-xl border bg-gray-50 p-4 sm:p-5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition duration-200 hover:bg-white hover:shadow-sm sm:p-5">
 
               <p className="text-sm text-gray-500">
                 Your Referral Code
@@ -1479,7 +1479,7 @@ export default function DashboardPage() {
 
             </div>
 
-            <div className="rounded-xl border bg-gray-50 p-4 sm:p-5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition duration-200 hover:bg-white hover:shadow-sm sm:p-5">
 
               <p className="text-sm text-gray-500">
                 Your Referral Link
@@ -1528,7 +1528,7 @@ export default function DashboardPage() {
 
         {/* ================= PROMO CODE ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <div className="flex items-start gap-3">
 
@@ -1620,7 +1620,7 @@ export default function DashboardPage() {
 
         {/* ================= ACTIVE INVESTMENTS ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
 
@@ -1676,13 +1676,13 @@ export default function DashboardPage() {
 
           ) : (
 
-            <div className="mt-6 overflow-x-auto rounded-xl border">
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
 
               <table className="w-full min-w-[1050px] text-left text-sm">
 
                 <thead>
 
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
 
                     <th className="px-4 py-3 font-semibold text-gray-600">
                       Amount
@@ -1750,7 +1750,7 @@ export default function DashboardPage() {
                       return (
                         <tr
                           key={investment.id}
-                          className="border-b last:border-b-0 hover:bg-gray-50"
+                          className="border-b last:border-b-0 hover:bg-slate-50"
                         >
 
                           <td className="px-4 py-5 font-semibold text-gray-900">
@@ -1882,7 +1882,7 @@ export default function DashboardPage() {
 
         {/* ================= REFERRED USERS ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
             Referred Users
@@ -1896,13 +1896,13 @@ export default function DashboardPage() {
 
           ) : (
 
-            <div className="mt-5 overflow-x-auto rounded-xl border">
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
 
               <table className="w-full min-w-[800px] text-left text-sm">
 
                 <thead>
 
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
 
                     <th className="px-4 py-3">
                       User
@@ -1989,7 +1989,7 @@ export default function DashboardPage() {
 
         {/* ================= DEPOSITS ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
             Recent Deposits
@@ -2003,13 +2003,13 @@ export default function DashboardPage() {
 
           ) : (
 
-            <div className="mt-5 overflow-x-auto rounded-xl border">
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
 
               <table className="w-full min-w-[700px] text-left text-sm">
 
                 <thead>
 
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
 
                     <th className="px-4 py-3">
                       Method
@@ -2100,7 +2100,7 @@ export default function DashboardPage() {
 
         {/* ================= TRANSACTIONS ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
             Recent Transactions
@@ -2114,13 +2114,13 @@ export default function DashboardPage() {
 
           ) : (
 
-            <div className="mt-5 overflow-x-auto rounded-xl border">
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
 
               <table className="w-full min-w-[750px] text-left text-sm">
 
                 <thead>
 
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
 
                     <th className="px-4 py-3">
                       Type
@@ -2213,7 +2213,7 @@ export default function DashboardPage() {
 
         {/* ================= WITHDRAWALS ================= */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md sm:mt-8 sm:p-6">
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
@@ -2238,13 +2238,13 @@ export default function DashboardPage() {
 
           ) : (
 
-            <div className="mt-5 overflow-x-auto rounded-xl border">
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
 
               <table className="w-full min-w-[750px] text-left text-sm">
 
                 <thead>
 
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b border-slate-200 bg-slate-50">
 
                     <th className="px-4 py-3">
                       Method
@@ -2336,7 +2336,7 @@ export default function DashboardPage() {
 
         {/* ================= FOOTER ================= */}
 
-        <footer className="mt-8 border-t py-8 text-center text-xs text-gray-500 sm:mt-10 sm:text-sm">
+        <footer className="mt-10 border-t border-slate-200 py-8 text-center text-xs font-medium text-slate-500 sm:mt-12 sm:text-sm">
           (c) {new Date().getFullYear()} Smart Money Income.
           All rights reserved.
         </footer>
@@ -2346,3 +2346,11 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
