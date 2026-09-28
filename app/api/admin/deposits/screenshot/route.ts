@@ -1,12 +1,20 @@
+import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { NextResponse } from "next/server";
 import { get } from "@vercel/blob";
-import { isAdminAuthenticated } from "@/lib/admin/auth";
 
 export const runtime = "nodejs";
 
+const ALLOWED_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+]);
+
 export async function GET(request: Request) {
   try {
-    const authenticated = await isAdminAuthenticated();
+    const authenticated =
+      await isAdminAuthenticated();
 
     if (!authenticated) {
       return NextResponse.json(
@@ -18,8 +26,11 @@ export async function GET(request: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const file = searchParams.get("file");
+    const { searchParams } =
+      new URL(request.url);
+
+    const file =
+      searchParams.get("file");
 
     if (!file) {
       return NextResponse.json(
@@ -31,24 +42,27 @@ export async function GET(request: Request) {
       );
     }
 
-    // =========================
-    // VERCEL BLOB
-    // =========================
-
     let pathname = file;
 
-    // If database contains full Blob URL,
-    // extract only the pathname.
+    // =========================
+    // FULL BLOB URL
+    // =========================
+
     if (
-      pathname.startsWith("http://") ||
-      pathname.startsWith("https://")
+      pathname.startsWith("https://") ||
+      pathname.startsWith("http://")
     ) {
       try {
-        const blobUrl = new URL(pathname);
+        const blobUrl =
+          new URL(pathname);
 
-        pathname = decodeURIComponent(
-          blobUrl.pathname.replace(/^\/+/, "")
-        );
+        pathname =
+          decodeURIComponent(
+            blobUrl.pathname.replace(
+              /^\/+/,
+              ""
+            )
+          );
       } catch {
         return NextResponse.json(
           {
@@ -61,13 +75,30 @@ export async function GET(request: Request) {
     }
 
     // =========================
+    // OLD FILENAME SUPPORT
+    // =========================
+
+    // If database contains only:
+    // deposit-xxxx.jpg
+    //
+    // convert it to:
+    // deposits/deposit-xxxx.jpg
+
+    if (
+      !pathname.startsWith("deposits/")
+    ) {
+      pathname =
+        `deposits/${pathname}`;
+    }
+
+    // =========================
     // SECURITY
     // =========================
 
     if (
-      !pathname.startsWith("deposits/") ||
       pathname.includes("..") ||
-      pathname.includes("\\")
+      pathname.includes("\\") ||
+      !pathname.startsWith("deposits/")
     ) {
       return NextResponse.json(
         {
@@ -78,13 +109,38 @@ export async function GET(request: Request) {
       );
     }
 
+    const fileName =
+      pathname.split("/").pop() || "";
+
+    const extension =
+      fileName
+        .slice(
+          fileName.lastIndexOf(".")
+        )
+        .toLowerCase();
+
+    if (
+      !ALLOWED_EXTENSIONS.has(
+        extension
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid file type.",
+        },
+        { status: 400 }
+      );
+    }
+
     // =========================
-    // GET PRIVATE BLOB
+    // PRIVATE VERCEL BLOB
     // =========================
 
-    const result = await get(pathname, {
-      access: "private",
-    });
+    const result =
+      await get(pathname, {
+        access: "private",
+      });
 
     if (!result) {
       return NextResponse.json(
@@ -96,23 +152,26 @@ export async function GET(request: Request) {
       );
     }
 
-    return new NextResponse(result.stream, {
-      status: 200,
-      headers: {
-        "Content-Type":
-          result.blob.contentType ||
-          "application/octet-stream",
+    return new NextResponse(
+      result.stream,
+      {
+        status: 200,
+        headers: {
+          "Content-Type":
+            result.blob.contentType ||
+            "application/octet-stream",
 
-        "Content-Disposition":
-          "inline",
+          "Content-Disposition":
+            "inline",
 
-        "Cache-Control":
-          "private, no-store",
+          "Cache-Control":
+            "private, no-store",
 
-        "X-Content-Type-Options":
-          "nosniff",
-      },
-    });
+          "X-Content-Type-Options":
+            "nosniff",
+        },
+      }
+    );
   } catch (error) {
     console.error(
       "ADMIN DEPOSIT SCREENSHOT ERROR:",
