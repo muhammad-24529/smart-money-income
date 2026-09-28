@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server";
+import { get } from "@vercel/blob";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export const runtime = "nodejs";
 
-const ALLOWED_EXTENSIONS = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-]);
-
 export async function GET(request: Request) {
   try {
-    const authenticated =
-      await isAdminAuthenticated();
+    const authenticated = await isAdminAuthenticated();
 
     if (!authenticated) {
       return NextResponse.json(
@@ -27,11 +18,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const { searchParams } =
-      new URL(request.url);
-
-    const file =
-      searchParams.get("file");
+    const { searchParams } = new URL(request.url);
+    const file = searchParams.get("file");
 
     if (!file) {
       return NextResponse.json(
@@ -43,91 +31,43 @@ export async function GET(request: Request) {
       );
     }
 
-    const safeFileName =
-      path.basename(file);
+    // =========================
+    // VERCEL BLOB
+    // =========================
 
-    if (safeFileName !== file) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid file name.",
-        },
-        { status: 400 }
-      );
-    }
+    let pathname = file;
 
-    const extension =
-      path.extname(
-        safeFileName
-      ).toLowerCase();
-
+    // If database contains full Blob URL,
+    // extract only the pathname.
     if (
-      !ALLOWED_EXTENSIONS.has(
-        extension
-      )
+      pathname.startsWith("http://") ||
+      pathname.startsWith("https://")
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid file type.",
-        },
-        { status: 400 }
-      );
+      try {
+        const blobUrl = new URL(pathname);
+
+        pathname = decodeURIComponent(
+          blobUrl.pathname.replace(/^\/+/, "")
+        );
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid Blob URL.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // =========================
-    // PRIVATE STORAGE
-    // =========================
-
-    const privateDirectory =
-      path.resolve(
-        process.cwd(),
-        "private",
-        "uploads",
-        "deposits"
-      );
-
-    const privateFilePath =
-      path.resolve(
-        privateDirectory,
-        safeFileName
-      );
-
-    const privateAllowedDirectory =
-      privateDirectory + path.sep;
-
-    // =========================
-    // OLD PUBLIC STORAGE
-    // =========================
-
-    const publicDirectory =
-      path.resolve(
-        process.cwd(),
-        "public",
-        "uploads",
-        "deposits"
-      );
-
-    const publicFilePath =
-      path.resolve(
-        publicDirectory,
-        safeFileName
-      );
-
-    const publicAllowedDirectory =
-      publicDirectory + path.sep;
-
-    // =========================
-    // PATH SECURITY
+    // SECURITY
     // =========================
 
     if (
-      !privateFilePath.startsWith(
-        privateAllowedDirectory
-      ) ||
-      !publicFilePath.startsWith(
-        publicAllowedDirectory
-      )
+      !pathname.startsWith("deposits/") ||
+      pathname.includes("..") ||
+      pathname.includes("\\")
     ) {
       return NextResponse.json(
         {
@@ -139,50 +79,40 @@ export async function GET(request: Request) {
     }
 
     // =========================
-    // TRY PRIVATE FIRST
+    // GET PRIVATE BLOB
     // =========================
 
-    let fileBuffer: Buffer;
+    const result = await get(pathname, {
+      access: "private",
+    });
 
-    try {
-      fileBuffer =
-        await readFile(
-          privateFilePath
-        );
-    } catch {
-      // =========================
-      // FALLBACK TO OLD PUBLIC FILE
-      // =========================
-
-      fileBuffer =
-        await readFile(
-          publicFilePath
-        );
+    if (!result) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Screenshot not found.",
+        },
+        { status: 404 }
+      );
     }
 
-    const contentType =
-      extension === ".png"
-        ? "image/png"
-        : extension === ".webp"
-          ? "image/webp"
-          : "image/jpeg";
+    return new NextResponse(result.stream, {
+      status: 200,
+      headers: {
+        "Content-Type":
+          result.blob.contentType ||
+          "application/octet-stream",
 
-    return new NextResponse(
-      new Uint8Array(fileBuffer),
-      {
-        status: 200,
-        headers: {
-          "Content-Type":
-            contentType,
-          "Content-Disposition":
-            "inline",
-          "Cache-Control":
-            "private, no-store",
-          "X-Content-Type-Options":
-            "nosniff",
-        },
-      }
-    );
+        "Content-Disposition":
+          "inline",
+
+        "Cache-Control":
+          "private, no-store",
+
+        "X-Content-Type-Options":
+          "nosniff",
+      },
+    });
   } catch (error) {
     console.error(
       "ADMIN DEPOSIT SCREENSHOT ERROR:",
