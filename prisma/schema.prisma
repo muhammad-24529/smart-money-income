@@ -75,6 +75,8 @@ model User {
   promoCodeUsages PromoCodeUsage[]
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -89,6 +91,8 @@ model InvestmentPlan {
   investments Investment[]
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -113,6 +117,8 @@ model Investment {
   transactions Transaction[]
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -129,6 +135,8 @@ model Deposit {
   user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -145,6 +153,8 @@ model Withdrawal {
   user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -175,6 +185,8 @@ model ReferralCommission {
   referredUser User @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 
   @@unique([referrerId, referredUserId])
@@ -193,6 +205,8 @@ model PromoCode {
   usages PromoCodeUsage[]
 
   createdAt DateTime @default(now())
+    approvedAt DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -246,3 +260,6 @@ model AuditLog {
 
   createdAt DateTime @default(now())
 }
+
+
+

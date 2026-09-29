@@ -673,6 +673,12 @@ export async function GET(
                     withdrawal.createdAt
                   )
                 : null,
+            approvedAt:
+              withdrawal.approvedAt
+                ? String(
+                    withdrawal.approvedAt
+                  )
+                : null,
           })
         ),
 

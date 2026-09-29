@@ -1,0 +1,209 @@
+// use prisma-8
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model User {
+  id                                    String               @id(map: "user_pkey")
+  email                                 String               @unique(map: "user_email_key")
+  name                                  String
+  password                              String
+  balance                               Int                  @default(0)
+  referralCode                          String?              @unique(map: "user_referralCode_key")
+  referredById                          String?
+  isActive                              Boolean              @default(true)
+  auditLogs                             AuditLog[]
+  chatMessages                          ChatMessage[]
+  deposits                              Deposit[]
+  investments                           Investment[]
+  notifications                         Notification[]
+  promoCodeUsages                       PromoCodeUsage[]
+  transactions                          Transaction[]
+  withdrawals                           Withdrawal[]
+  referralCommissions                   ReferralCommission[] @relation(name: "referralCommission_referredUserId_fkey")
+  referralCommissionsReferralCommission ReferralCommission[] @relation(name: "referralCommission_referrerId_fkey")
+  referredBy                            User?                @relation(name: "user_referredById_fkey", fields: [referredById], references: [id], onDelete: SetNull, map: "user_referredById_fkey")
+  users                                 User[]               @relation(name: "user_referredById_fkey")
+
+  @@index([referredById], name: "user_referredById_idx")
+  @@map("user")
+}
+
+model AuditLog {
+  id       String  @id(map: "auditLog_pkey")
+  action   String
+  details  String?
+  entity   String
+  entityId String?
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull, map: "auditLog_userId_fkey")
+
+  @@index([userId], name: "auditLog_userId_idx")
+  @@map("auditLog")
+}
+
+model ChatMessage {
+  id         String  @id(map: "chatMessage_pkey")
+  isRead     Boolean @default(false)
+  message    String
+  senderType String
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "chatMessage_userId_fkey")
+
+  @@index([userId], name: "chatMessage_userId_idx")
+  @@map("chatMessage")
+}
+
+model Deposit {
+  id            String      @id(map: "deposit_pkey")
+  amount        Int
+  paymentMethod String
+  referenceId   String
+  screenshotUrl String?
+  status        String      @default("PENDING")
+  userId        String
+  createdAt     Timestamptz @default(now())
+  usdtRate      Int         @default(285)
+  pkrAmount     Int
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "deposit_userId_fkey")
+
+  @@index([userId], name: "deposit_userId_idx")
+  @@map("deposit")
+}
+
+model InvestmentPlan {
+  id           String       @id(map: "investmentPlan_pkey")
+  active       Boolean      @default(true)
+  amount       Int
+  dailyIncome  Int
+  durationDays Int
+  name         String       @unique(map: "investmentPlan_name_key")
+  investments  Investment[]
+
+  @@map("investmentPlan")
+}
+
+model Investment {
+  id           String         @id(map: "investment_pkey")
+  amount       Int
+  dailyIncome  Int
+  durationDays Int
+  lastIncomeAt Timestamptz?
+  planId       String
+  startAt      Timestamptz?
+  status       String         @default("ACTIVE")
+  userId       String
+  transactions Transaction[]
+  plan         InvestmentPlan @relation(fields: [planId], references: [id], map: "investment_planId_fkey")
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade, map: "investment_userId_fkey")
+
+  @@unique([userId, planId], map: "investment_userId_planId_key")
+  @@index([planId], name: "investment_planId_idx")
+  @@index([userId], name: "investment_userId_idx")
+  @@map("investment")
+}
+
+model News {
+  id        String      @id(map: "news_pkey")
+  active    Boolean     @default(true)
+  createdAt Timestamptz @default(now())
+  message   String
+  title     String
+
+  @@map("news")
+}
+
+model Notification {
+  id      String  @id(map: "notification_pkey")
+  isRead  Boolean @default(false)
+  message String
+  title   String
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "notification_userId_fkey")
+
+  @@index([userId], name: "notification_userId_idx")
+  @@map("notification")
+}
+
+model PaymentMethod {
+  id           String  @id(map: "paymentMethod_pkey")
+  accountInfo  String
+  active       Boolean @default(true)
+  instructions String?
+  methodType   String
+  name         String
+
+  @@map("paymentMethod")
+}
+
+model PromoCode {
+  id                String           @id(map: "promoCode_pkey")
+  active            Boolean          @default(true)
+  bonusAmount       Int              @default(0)
+  bonusPercent      Int              @default(0)
+  code              String           @unique(map: "promoCode_code_key")
+  maxUses           Int?
+  usedCount         Int              @default(0)
+  requiredReferrals Int              @default(0)
+  promoCodeUsages   PromoCodeUsage[]
+
+  @@map("promoCode")
+}
+
+model PromoCodeUsage {
+  id           String      @id(map: "promoCodeUsage_pkey")
+  createdAt    Timestamptz @default(now())
+  promoCodeId  String
+  rewardAmount Int
+  userId       String
+  promoCode    PromoCode   @relation(fields: [promoCodeId], references: [id], onDelete: Cascade, map: "promoCodeUsage_promoCodeId_fkey")
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "promoCodeUsage_userId_fkey")
+
+  @@unique([promoCodeId, userId], map: "promoCodeUsage_promoCodeId_userId_key")
+  @@index([promoCodeId], name: "promoCodeUsage_promoCodeId_idx")
+  @@index([userId], name: "promoCodeUsage_userId_idx")
+  @@map("promoCodeUsage")
+}
+
+model ReferralCommission {
+  id             String @id(map: "referralCommission_pkey")
+  amount         Int
+  percentage     Int    @default(10)
+  referredUserId String
+  referrerId     String
+  status         String @default("PENDING")
+  referredUser   User   @relation(name: "referralCommission_referredUserId_fkey", fields: [referredUserId], references: [id], onDelete: Cascade, map: "referralCommission_referredUserId_fkey")
+  referrer       User   @relation(name: "referralCommission_referrerId_fkey", fields: [referrerId], references: [id], onDelete: Cascade, map: "referralCommission_referrerId_fkey")
+
+  @@index([referredUserId], name: "referralCommission_referredUserId_idx")
+  @@index([referrerId], name: "referralCommission_referrerId_idx")
+  @@map("referralCommission")
+}
+
+model Transaction {
+  id           String      @id(map: "transaction_pkey")
+  amount       Int
+  description  String?
+  investmentId String?
+  status       String      @default("COMPLETED")
+  _type        String      @map("type")
+  userId       String
+  investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull, map: "transaction_investmentId_fkey")
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "transaction_userId_fkey")
+
+  @@index([investmentId], name: "transaction_investmentId_idx")
+  @@index([userId], name: "transaction_userId_idx")
+  @@map("transaction")
+}
+
+model Withdrawal {
+  id            String  @id(map: "withdrawal_pkey")
+  accountInfo   String
+  amount        Int
+  paymentMethod String
+  referenceId   String?
+  status        String  @default("PENDING")
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "withdrawal_userId_fkey")
+
+  @@index([userId], name: "withdrawal_userId_idx")
+  @@map("withdrawal")
+}

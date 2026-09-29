@@ -226,6 +226,7 @@ export async function PATCH(
           })
           .update({
             status: "APPROVED",
+            approvedAt: new Date(),
             referenceId:
               referenceId ||
               withdrawal.referenceId,
@@ -525,3 +526,6 @@ export async function PATCH(
     );
   }
 }
+
+
+

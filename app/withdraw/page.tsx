@@ -1,4 +1,4 @@
-
+﻿
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,6 +25,7 @@ type Withdrawal = {
   referenceId?: string | null;
   status: string;
   createdAt?: string | null;
+  approvedAt?: string | null;
 };
 
 export default function WithdrawPage() {
@@ -307,7 +308,7 @@ export default function WithdrawPage() {
       return "Date unavailable";
     }
 
-    return date.toLocaleString();
+    return date.toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
   }
 
   // =====================================
@@ -331,7 +332,7 @@ export default function WithdrawPage() {
       return {
         badge:
           "bg-green-100 text-green-700",
-        icon: "✅",
+        icon: "Ã¢Å“â€¦",
       };
     }
 
@@ -342,14 +343,14 @@ export default function WithdrawPage() {
       return {
         badge:
           "bg-red-100 text-red-700",
-        icon: "❌",
+        icon: "Ã¢ÂÅ’",
       };
     }
 
     return {
       badge:
         "bg-yellow-100 text-yellow-700",
-      icon: "⏳",
+      icon: "Ã¢ÂÂ³",
     };
   }
 
@@ -696,7 +697,7 @@ export default function WithdrawPage() {
         <div className="mb-6">
 
           <h1 className="text-3xl font-bold text-gray-900">
-            Withdraw Funds 💸
+            Withdraw Funds Ã°Å¸â€™Â¸
           </h1>
 
           <p className="mt-2 text-gray-500">
@@ -742,7 +743,7 @@ export default function WithdrawPage() {
           <div className="flex gap-3">
 
             <div className="text-2xl">
-              ℹ️
+              Ã¢â€žÂ¹Ã¯Â¸Â
             </div>
 
             <div>
@@ -772,7 +773,7 @@ export default function WithdrawPage() {
             <div className="flex gap-3">
 
               <div className="text-2xl">
-                ✅
+                Ã¢Å“â€¦
               </div>
 
               <div>
@@ -845,7 +846,7 @@ export default function WithdrawPage() {
             <div className="flex gap-3">
 
               <div className="text-2xl">
-                ⚠️
+                Ã¢Å¡Â Ã¯Â¸Â
               </div>
 
               <div>
@@ -1105,7 +1106,7 @@ export default function WithdrawPage() {
 
             {submitting
               ? "Submitting Withdrawal..."
-              : "💸 Submit Withdrawal"}
+              : "Ã°Å¸â€™Â¸ Submit Withdrawal"}
 
           </button>
 
@@ -1139,7 +1140,7 @@ export default function WithdrawPage() {
               }
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              🔄 Refresh
+              Ã°Å¸â€â€ž Refresh
             </button>
 
           </div>
@@ -1150,7 +1151,7 @@ export default function WithdrawPage() {
             <div className="mt-5 rounded-xl bg-gray-50 p-6 text-center">
 
               <div className="text-3xl">
-                💸
+                Ã°Å¸â€™Â¸
               </div>
 
               <p className="mt-2 font-semibold text-gray-700">
@@ -1268,6 +1269,11 @@ export default function WithdrawPage() {
                             )}
                           </p>
 
+                          <p className="mt-1 text-xs text-gray-400">
+                            Approved:{" "}
+                            {withdrawal.approvedAt ? formatDate(withdrawal.approvedAt) : String(withdrawal.status || "").toUpperCase() === "PENDING" ? "Pending" : "â€”"}
+                          </p>
+
                         </div>
 
                       </div>
@@ -1294,23 +1300,23 @@ export default function WithdrawPage() {
           <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-600">
 
             <li>
-              • Withdrawal requests are reviewed by the admin.
+              Ã¢â‚¬Â¢ Withdrawal requests are reviewed by the admin.
             </li>
 
             <li>
-              • Your wallet balance is deducted when the withdrawal request is submitted.
+              Ã¢â‚¬Â¢ Your wallet balance is deducted when the withdrawal request is submitted.
             </li>
 
             <li>
-              • Make sure your account information is correct.
+              Ã¢â‚¬Â¢ Make sure your account information is correct.
             </li>
 
             <li>
-              • Approved withdrawals will remain in your withdrawal history.
+              Ã¢â‚¬Â¢ Approved withdrawals will remain in your withdrawal history.
             </li>
 
             <li>
-              • Rejected withdrawals will be refunded to your wallet.
+              Ã¢â‚¬Â¢ Rejected withdrawals will be refunded to your wallet.
             </li>
 
           </ul>
@@ -1327,7 +1333,7 @@ export default function WithdrawPage() {
             href="/dashboard"
             className="text-sm font-semibold text-blue-600 hover:text-blue-700"
           >
-            ← Back to Dashboard
+            Ã¢â€ Â Back to Dashboard
           </a>
 
         </div>
@@ -1337,3 +1343,10 @@ export default function WithdrawPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
