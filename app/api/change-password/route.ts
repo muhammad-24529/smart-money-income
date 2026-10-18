@@ -1,11 +1,27 @@
 ﻿import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
-import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
+export const runtime = "nodejs";
+
+const isProduction = Boolean(process.env.VERCEL);
+const databaseUrl = process.env.DATABASE_URL;
+
+const pool = databaseUrl
+  ? new Pool({ connectionString: databaseUrl })
+  : null;
+
 export async function POST(request: Request) {
+  let client: import("pg").PoolClient | null = null;
+
   try {
-    await connectDB();
+    if (!pool) {
+      return NextResponse.json(
+        { error: "Database connection is not configured." },
+        { status: 500 }
+      );
+    }
 
     const userId = await getUserSession();
 
@@ -42,9 +58,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await db.orm.public.User
-      .where({ id: userId })
-      .first();
+    const passwordColumn = isProduction
+      ? '"passwordHash"'
+      : '"password"';
+
+    client = await pool.connect();
+
+    const result = await client.query(
+      `SELECT id, ${passwordColumn} AS password_value
+       FROM public."user"
+       WHERE id = $1
+       LIMIT 1`,
+      [userId]
+    );
+
+    const user = result.rows[0];
 
     if (!user) {
       return NextResponse.json(
@@ -55,7 +83,7 @@ export async function POST(request: Request) {
 
     const passwordMatch = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password_value
     );
 
     if (!passwordMatch) {
@@ -67,11 +95,12 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    await db.orm.public.User
-      .where({ id: userId })
-      .update({
-        password: hashedPassword,
-      });
+    await client.query(
+      `UPDATE public."user"
+       SET ${passwordColumn} = $1
+       WHERE id = $2`,
+      [hashedPassword, userId]
+    );
 
     return NextResponse.json({
       success: true,
@@ -89,5 +118,8 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
+  } finally {
+    client?.release();
   }
 }
+

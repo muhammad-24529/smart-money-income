@@ -1,6 +1,15 @@
-import { NextResponse } from "next/server";
-import { db, connectDB } from "@/lib/prisma";
+﻿import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+
+export const runtime = "nodejs";
+
+const isProduction = Boolean(process.env.VERCEL);
+const databaseUrl = process.env.DATABASE_URL;
+
+const pool = databaseUrl
+  ? new Pool({ connectionString: databaseUrl })
+  : null;
 
 function generateReferralCode(name: string) {
   const cleanName = name
@@ -16,45 +25,27 @@ function generateReferralCode(name: string) {
   return `${cleanName || "USER"}${random}`;
 }
 
-async function createUniqueReferralCode(name: string) {
-  for (let i = 0; i < 20; i++) {
-    const code = generateReferralCode(name);
-
-    const existing = await db.orm.public.User
-      .where({
-        referralCode: code,
-      })
-      .first();
-
-    if (!existing) {
-      return code;
-    }
+export async function POST(request: Request) {
+  if (!pool) {
+    return NextResponse.json(
+      { success: false, error: "Database connection is not configured." },
+      { status: 500 }
+    );
   }
 
-  throw new Error("Could not generate a unique referral code.");
-}
+  const client = await pool.connect();
 
-export async function POST(request: Request) {
   try {
-    await connectDB();
-
     const body = await request.json();
 
     const name =
-      typeof body.name === "string"
-        ? body.name.trim()
-        : "";
-
+      typeof body.name === "string" ? body.name.trim() : "";
     const email =
       typeof body.email === "string"
         ? body.email.trim().toLowerCase()
         : "";
-
     const password =
-      typeof body.password === "string"
-        ? body.password
-        : "";
-
+      typeof body.password === "string" ? body.password : "";
     const referralCodeInput =
       typeof body.referralCode === "string"
         ? body.referralCode.trim().toUpperCase()
@@ -62,129 +53,114 @@ export async function POST(request: Request) {
           ? body.ref.trim().toUpperCase()
           : "";
 
-    // ------------------------------------------
-    // VALIDATION
-    // ------------------------------------------
-
     if (!name || !email || !password) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Name, email and password are required.",
-        },
+        { success: false, error: "Name, email and password are required." },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Password must be at least 6 characters.",
-        },
+        { success: false, error: "Password must be at least 6 characters." },
         { status: 400 }
       );
     }
 
-    // ------------------------------------------
-    // CHECK EXISTING USER
-    // ------------------------------------------
+    const passwordColumn = isProduction ? '"passwordHash"' : '"password"';
 
-    const existingUser = await db.orm.public.User
-      .where({
-        email,
-      })
-      .first();
+    await client.query("BEGIN");
 
-    if (existingUser) {
+    const existingUser = await client.query(
+      'SELECT id FROM public."user" WHERE email = $1 LIMIT 1',
+      [email]
+    );
+
+    if (existingUser.rowCount) {
+      await client.query("ROLLBACK");
       return NextResponse.json(
-        {
-          success: false,
-          error: "User already exists.",
-        },
+        { success: false, error: "User already exists." },
         { status: 409 }
       );
     }
 
-    // ------------------------------------------
-    // FIND REFERRER
-    // ------------------------------------------
-
-    let referrer: any = null;
+    let referrer: { id: string } | null = null;
 
     if (referralCodeInput) {
-      referrer = await db.orm.public.User
-        .where({
-          referralCode: referralCodeInput,
-        })
-        .first();
+      const referrerResult = await client.query(
+        'SELECT id FROM public."user" WHERE "referralCode" = $1 LIMIT 1',
+        [referralCodeInput]
+      );
 
-      if (!referrer) {
+      if (!referrerResult.rows[0]) {
+        await client.query("ROLLBACK");
         return NextResponse.json(
-          {
-            success: false,
-            error: "Invalid referral code.",
-          },
+          { success: false, error: "Invalid referral code." },
           { status: 400 }
         );
       }
+
+      referrer = referrerResult.rows[0];
     }
 
-    // ------------------------------------------
-    // HASH PASSWORD
-    // ------------------------------------------
+    let newReferralCode = "";
+    let codeFound = false;
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      12
+    for (let i = 0; i < 20; i++) {
+      const candidate = generateReferralCode(name);
+      const found = await client.query(
+        'SELECT id FROM public."user" WHERE "referralCode" = $1 LIMIT 1',
+        [candidate]
+      );
+
+      if (!found.rows[0]) {
+        newReferralCode = candidate;
+        codeFound = true;
+        break;
+      }
+    }
+
+    if (!codeFound) {
+      throw new Error("Could not generate a unique referral code.");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const userId = crypto.randomUUID();
+
+    const insertUser = await client.query(
+      `INSERT INTO public."user"
+        (id, name, email, ${passwordColumn}, "referralCode", "referredById")
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, email, "referralCode", "referredById"`,
+      [
+        userId,
+        name,
+        email,
+        hashedPassword,
+        newReferralCode,
+        referrer?.id ?? null,
+      ]
     );
 
-    // ------------------------------------------
-    // GENERATE USER REFERRAL CODE
-    // ------------------------------------------
-
-    const newReferralCode =
-      await createUniqueReferralCode(name);
-
-    // ------------------------------------------
-    // CREATE USER
-    // ------------------------------------------
-
-    const user = await db.orm.public.User.create({
-      name,
-      email,
-      password: hashedPassword,
-      referralCode: newReferralCode,
-      referredById: referrer ? referrer.id : null,
-    });
-
-    // ------------------------------------------
-    // CREATE REFERRAL RECORD
-    // ------------------------------------------
-    //
-    // Important:
-    // This record does NOT unlock withdrawal
-    // by itself.
-    //
-    // Withdrawal will only unlock after the
-    // referred user's deposit becomes
-    // APPROVED or COMPLETED.
-    //
-    // ------------------------------------------
+    const user = insertUser.rows[0];
 
     if (referrer) {
-      await db.orm.public.ReferralCommission.create({
-        referrerId: referrer.id,
-        referredUserId: user.id,
-        amount: 0,
-        percentage: 0,
-        status: "PENDING",
-      });
+      await client.query(
+        `INSERT INTO public."referralCommission"
+          (id, "referrerId", "referredUserId", amount, percentage, status)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          crypto.randomUUID(),
+          referrer.id,
+          user.id,
+          0,
+          isProduction ? 10 : 0,
+          "PENDING",
+        ]
+      );
     }
 
-    // ------------------------------------------
-    // RESPONSE
-    // ------------------------------------------
+    await client.query("COMMIT");
 
     return NextResponse.json(
       {
@@ -192,36 +168,27 @@ export async function POST(request: Request) {
         message: referrer
           ? "Account created successfully with referral."
           : "Account created successfully.",
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          referralCode: user.referralCode,
-          referredById: user.referredById,
-        },
+        user,
         referral: referrer
-          ? {
-              referred: true,
-              referrerId: referrer.id,
-            }
-          : {
-              referred: false,
-            },
+          ? { referred: true, referrerId: referrer.id }
+          : { referred: false },
       },
       { status: 201 }
     );
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("REGISTER ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong.",
+        error: error instanceof Error
+          ? error.message
+          : "Something went wrong.",
       },
       { status: 500 }
     );
+  } finally {
+    client.release();
   }
 }

@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { validateRequestOrigin } from "@/lib/security/csrf";
 
 export const runtime = "nodejs";
+
+const newsPool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : null;
 
 // GET
 // Normal users: active news only
@@ -36,9 +41,21 @@ export async function GET() {
       );
     }
 
-    const user = await db.orm.public.User.where({
-      id: userId,
-    }).first();
+    if (!newsPool) {
+      return NextResponse.json(
+        { success: false, error: "Database connection is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const userResult = await newsPool.query(
+      'SELECT id FROM public."user" WHERE id = $1 LIMIT 1',
+      [userId]
+    );
+
+    const user = userResult.rows[0] ?? null;
+
+
 
     if (!user) {
       return NextResponse.json(
@@ -143,6 +160,7 @@ export async function POST(request: Request) {
     }
 
     const news = await db.orm.public.News.create({
+          id: crypto.randomUUID(),
       title,
       message,
       active,
@@ -396,3 +414,6 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
+
+
