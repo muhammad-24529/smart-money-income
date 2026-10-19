@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
 export const runtime = "nodejs";
+
+const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
 
 export async function GET() {
   try {
@@ -20,11 +23,11 @@ export async function GET() {
 
     await connectDB();
 
-    const user = await db.orm.public.User
-      .where({
-        id: sessionUserId,
-      })
-      .first();
+    const userResult = await pool!.query(
+      'SELECT id FROM public."user" WHERE id = $1 LIMIT 1',
+      [sessionUserId]
+    );
+    const user = userResult.rows[0] ?? null;
 
     if (!user) {
       return NextResponse.json(

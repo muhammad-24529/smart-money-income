@@ -52,7 +52,7 @@ export async function POST() {
 
     await connectDB();
 
-    const users = await db.orm.public.User.all();
+    const users = await db.orm.public.User.select("id", "name", "referralCode").all();
 
     let updated = 0;
 

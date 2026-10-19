@@ -92,12 +92,7 @@ if (originError) {
     // FIND USER
     // =========================
 
-    const user =
-      await db.orm.public.User
-        .where({
-          id: userId,
-        })
-        .first();
+    const user = await db.orm.public.User.select("id", "balance", "isActive").where({ id: userId }).first();
 
     if (!user) {
       return NextResponse.json(
@@ -438,20 +433,12 @@ if (originError) {
 
     // Protect against an old balance
     // being overwritten by another request.
-    const updatedUser =
+    const updatedUserCount =
       await db.orm.public.User
-        .where({
-          id:
-            userId,
-          balance:
-            currentBalance,
-        })
-        .update({
-          balance:
-            newBalance,
-        });
+        .where({ id: userId, balance: currentBalance })
+        .updateAndCount({ balance: newBalance });
 
-    if (!updatedUser) {
+    if (updatedUserCount !== 1) {
       return NextResponse.json(
         {
           success: false,
@@ -462,100 +449,36 @@ if (originError) {
       );
     }
 
-    // =========================
-    // CREATE PROMO USAGE
-    // =========================
+    const newUsedCount = usedCount + 1;
 
     try {
       await db.orm.public.PromoCodeUsage.create({
-        promoCodeId:
-          promo.id,
-
+        promoCodeId: promo.id,
         userId,
-
         rewardAmount,
       });
-    } catch (usageError) {
-      // Roll back wallet if usage
-      // record could not be created.
-      await db.orm.public.User
-        .where({
-          id:
-            userId,
-          balance:
-            newBalance,
-        })
-        .update({
-          balance:
-            currentBalance,
-        });
 
-      console.error(
-        "PROMO USAGE CREATE ERROR:",
-        usageError
-      );
+      const updatedPromo = await db.orm.public.PromoCode
+        .where({ id: promo.id })
+        .update({ usedCount: newUsedCount });
+
+      if (!updatedPromo) {
+        throw new Error("Promo usage count could not be updated.");
+      }
+    } catch (promoUpdateError) {
+      console.error("PROMO USAGE UPDATE ERROR:", promoUpdateError);
+      await db.orm.public.User
+        .where({ id: userId, balance: newBalance })
+        .update({ balance: currentBalance });
 
       return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Promo code could not be redeemed.",
-        },
+        { success: false, error: "Promo code could not be completed." },
         { status: 500 }
       );
     }
-
-    // =========================
-    // UPDATE USED COUNT
-    // =========================
-
-    const newUsedCount =
-      usedCount + 1;
-
-    const updatedPromo =
-      await db.orm.public.PromoCode
-        .where({
-          id:
-            promo.id,
-          usedCount:
-            usedCount,
-        })
-        .update({
-          usedCount:
-            newUsedCount,
-        });
-
-    if (!updatedPromo) {
-      // Roll back usage record.
-      await db.orm.public.PromoCodeUsage
-        .where({
-          promoCodeId:
-            promo.id,
-          userId,
-        })
-        .delete();
-
-      // Roll back wallet.
-      await db.orm.public.User
-        .where({
-          id:
-            userId,
-          balance:
-            newBalance,
-        })
-        .update({
-          balance:
-            currentBalance,
-        });
-
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Promo code could not be completed. Please try again.",
-        },
-        { status: 409 }
-      );
+    const updatedUser = await db.orm.public.User.select("id", "balance").where({ id: userId }).first();
+    if (!updatedUser) {
+      return NextResponse.json({ success: false, error: "User could not be reloaded." }, { status: 500 });
     }
 
     // =========================
@@ -671,3 +594,9 @@ if (originError) {
     );
   }
 }
+
+
+
+
+
+

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
 export const runtime = "nodejs";
+
+const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
 
 export async function GET(
   request: Request,
@@ -67,10 +70,11 @@ export async function GET(
     // USER
     // =========================
 
-    const user =
-      await db.orm.public.User
-        .where({ id: userId })
-        .first();
+    const userResult = await pool!.query(
+      'SELECT id, name, email, balance, "isActive", "referralCode", "referredById" FROM public."user" WHERE id = $1 LIMIT 1',
+      [userId]
+    );
+    const user = userResult.rows[0] ?? null;
 
     if (!user) {
       return NextResponse.json(
@@ -175,12 +179,11 @@ export async function GET(
     const referredUsers: any[] = [];
 
     for (const referredUserId of referredUserIds) {
-      const referredUser =
-        await db.orm.public.User
-          .where({
-            id: referredUserId,
-          })
-          .first();
+      const referredUserResult = await pool!.query(
+        'SELECT id, name, email, "isActive" FROM public."user" WHERE id = $1 LIMIT 1',
+        [String(referredUserId)]
+      );
+      const referredUser = referredUserResult.rows[0] ?? null;
 
       if (!referredUser) {
         continue;

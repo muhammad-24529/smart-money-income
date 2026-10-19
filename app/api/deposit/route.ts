@@ -243,11 +243,7 @@ if (originError) {
     // =========================
 
     const user =
-      await db.orm.public.User
-        .where({
-          id: userId,
-        })
-        .first();
+      await db.orm.public.User.select("id", "name", "email", "isActive").where({ id: userId }).first();
 
     if (!user) {
       return NextResponse.json(
@@ -486,6 +482,7 @@ if (originError) {
     );
   }
 }
+
 
 
 
