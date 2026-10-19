@@ -73,8 +73,7 @@ export async function GET(request: Request) {
 
     if (userId) {
       const user =
-        await db.orm.public.User
-          .where({
+        await db.orm.public.User.select("id", "name", "email").where({
             id: userId,
           })
           .first();
@@ -167,7 +166,7 @@ export async function GET(request: Request) {
     // =====================================================
 
     const users =
-      await db.orm.public.User.all();
+      await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode").all();
 
     const result: any[] = [];
 
@@ -371,8 +370,7 @@ export async function POST(request: Request) {
     // -----------------------------------------------------
 
     const user =
-      await db.orm.public.User
-        .where({
+      await db.orm.public.User.select("id", "name", "email").where({
           id: userId,
         })
         .first();

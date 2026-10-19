@@ -214,16 +214,17 @@ export async function POST(request: Request) {
     const newBalance =
       currentBalance + rewardAmount;
 
-    const updatedUser =
+    const updatedUserCount =
       await db.orm.public.User
         .where({
           id: user.id,
+          balance: currentBalance,
         })
-        .update({
+        .updateAndCount({
           balance: newBalance,
         });
 
-    if (!updatedUser) {
+    if (updatedUserCount !== 1) {
       return NextResponse.json(
         {
           success: false,
@@ -244,8 +245,9 @@ export async function POST(request: Request) {
       await db.orm.public.User
         .where({
           id: user.id,
+          balance: newBalance,
         })
-        .update({
+        .updateAndCount({
           balance: currentBalance,
         });
 
@@ -260,6 +262,19 @@ export async function POST(request: Request) {
           error:
             "Promo code could not be redeemed.",
         },
+        { status: 500 }
+      );
+    }
+
+    const updatedUser =
+      await db.orm.public.User
+        .select("id", "balance")
+        .where({ id: user.id })
+        .first();
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { success: false, error: "Could not reload updated wallet." },
         { status: 500 }
       );
     }
@@ -287,8 +302,9 @@ export async function POST(request: Request) {
       await db.orm.public.User
         .where({
           id: user.id,
+          balance: newBalance,
         })
-        .update({
+        .updateAndCount({
           balance: currentBalance,
         });
 

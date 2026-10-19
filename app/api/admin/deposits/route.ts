@@ -273,11 +273,7 @@ export async function PATCH(
     // ==================================================
 
     const user =
-      await db.orm.public.User
-        .where({
-          id: deposit.userId,
-        })
-        .first();
+      await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referredById").where({ id: deposit.userId }).first();
 
     if (!user) {
       return NextResponse.json(
@@ -360,17 +356,17 @@ export async function PATCH(
     // overwriting a newer balance.
     // ==================================================
 
-    const updatedUser =
+    const updatedUserCount =
       await db.orm.public.User
         .where({
           id: user.id,
           balance: currentBalance,
         })
-        .update({
+        .updateAndCount({
           balance: newBalance,
         });
 
-    if (!updatedUser) {
+    if (updatedUserCount !== 1) {
       await db.orm.public.Deposit
         .where({
           id: depositId,
@@ -389,6 +385,9 @@ export async function PATCH(
         { status: 409 }
       );
     }
+
+    const updatedUser = await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode").where({ id: user.id }).first();
+    if (!updatedUser) { return NextResponse.json({ success: false, error: "User balance updated, but could not reload user." }, { status: 500 }); }
 
     // ==================================================
     // DEPOSIT TRANSACTION
@@ -439,12 +438,7 @@ export async function PATCH(
       false;
 
     if (user.referredById) {
-      referrer =
-        await db.orm.public.User
-          .where({
-            id: user.referredById,
-          })
-          .first();
+      referrer = await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode", "referredById").where({ id: user.referredById }).first();
 
       if (referrer) {
         // ==================================================
@@ -569,21 +563,17 @@ export async function PATCH(
               referrerBalance +
               commissionAmount;
 
-            const updatedReferrer =
+            const updatedReferrerCount =
               await db.orm.public.User
                 .where({
                   id: referrer.id,
-                  balance:
-                    referrerBalance,
+                  balance: referrerBalance,
                 })
-                .update({
-                  balance:
-                    newReferrerBalance,
+                .updateAndCount({
+                  balance: newReferrerBalance,
                 });
 
-            if (
-              updatedReferrer
-            ) {
+            if (updatedReferrerCount === 1) {
               // --------------------------------------------
               // COMMISSION TRANSACTION
               // --------------------------------------------
@@ -795,3 +785,7 @@ export async function PATCH(
     );
   }
 }
+
+
+
+

@@ -9,10 +9,13 @@ if (!("Temporal" in globalThis)) {
 }
 
 import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
 export const runtime = "nodejs";
+
+const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
 
 class PurchaseError extends Error {
   status: number;
@@ -125,12 +128,11 @@ if (originError) {
       // FIND USER INSIDE TRANSACTION
       // ------------------------------------------
 
-      const user =
-        await tx.orm.public.User
-          .where({
-            id: userId,
-          })
-          .first();
+      const userResult = await pool!.query(
+          'SELECT id, balance, "isActive" FROM public."user" WHERE id = $1 LIMIT 1',
+          [userId]
+        );
+      const user = userResult.rows[0] ?? null;
 
       if (!user) {
         throw new PurchaseError(
@@ -303,17 +305,17 @@ if (originError) {
       // DEDUCT WALLET BALANCE
       // ------------------------------------------
 
-      const updatedUser =
+      const updatedUserCount =
         await tx.orm.public.User
           .where({
             id: userId,
             balance: currentBalance,
           })
-          .update({
+          .updateAndCount({
             balance: newBalance,
           });
 
-      if (!updatedUser) {
+      if (updatedUserCount !== 1) {
         throw new PurchaseError(
           "Wallet balance changed before the purchase could be completed. Please try again.",
           409

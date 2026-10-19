@@ -1,6 +1,7 @@
 import { validateRequestOrigin } from "@/lib/security/csrf";
 import { Temporal } from "@js-temporal/polyfill";
 import { NextResponse } from "next/server";
+import { Pool } from "pg";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
@@ -12,6 +13,8 @@ if (!("Temporal" in globalThis)) {
 }
 
 export const runtime = "nodejs";
+
+const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
 
 export async function POST(request: Request) {
   const originError = validateRequestOrigin(request);
@@ -94,11 +97,11 @@ export async function POST(request: Request) {
       // FIND USER
       // ======================================
 
-      const user = await tx.orm.public.User
-        .where({
-          id: sessionUserId,
-        })
-        .first();
+      const userResult = await pool!.query(
+        'SELECT id, balance, "isActive" FROM public."user" WHERE id = $1 LIMIT 1',
+        [sessionUserId]
+      );
+      const user = userResult.rows[0] ?? null;
 
       if (!user) {
         return {
@@ -356,17 +359,17 @@ export async function POST(request: Request) {
       // ATOMIC BALANCE UPDATE
       // ======================================
 
-      const updatedUser =
+      const updatedUserCount =
         await tx.orm.public.User
           .where({
             id: sessionUserId,
             balance: currentBalance,
           })
-          .update({
+          .updateAndCount({
             balance: newBalance,
           });
 
-      if (!updatedUser) {
+      if (updatedUserCount !== 1) {
         return {
           kind: "CONFLICT" as const,
         };

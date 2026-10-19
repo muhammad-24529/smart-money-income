@@ -352,17 +352,14 @@ if (originError) {
     // DEDUCT BALANCE
     // ================================
 
-    const updatedUser =
+    const updatedUserCount =
       await db.orm.public.User
-        .where({
-          id: userId,
-        })
-        .update({
-          balance:
-            newBalance,
+        .where({ id: userId })
+        .updateAndCount({
+          balance: newBalance,
         });
 
-    if (!updatedUser) {
+    if (updatedUserCount !== 1) {
       // IMPORTANT:
       // Withdrawal already exists, so admin
       // should NOT process this request if
@@ -479,3 +476,4 @@ if (originError) {
     );
   }
 }
+

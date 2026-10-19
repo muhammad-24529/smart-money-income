@@ -24,7 +24,7 @@ export async function GET() {
       await db.orm.public.Withdrawal.all();
 
     const users =
-      await db.orm.public.User.all();
+      await db.orm.public.User.select("id", "name", "email").all();
 
     const result = withdrawals.map(
       (withdrawal) => {
@@ -177,10 +177,7 @@ export async function PATCH(
     }
 
     const user =
-      await db.orm.public.User
-        .where({
-          id: withdrawal.userId,
-        })
+      await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode").where({ id: withdrawal.userId })
         .first();
 
     if (!user) {
@@ -526,6 +523,9 @@ export async function PATCH(
     );
   }
 }
+
+
+
 
 
 

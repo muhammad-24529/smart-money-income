@@ -21,12 +21,13 @@ export async function GET() {
 
     await connectDB();
 
-    const users = await db.orm.public.User.all();
+    const users = await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode", "referredById").all();
 
     const usersWithReferrals = await Promise.all(
       users.map(async (user) => {
         const referredUsers =
           await db.orm.public.User
+            .select("id", "name", "email", "balance", "isActive", "referralCode", "referredById")
             .where({
               referredById: user.id,
             })
@@ -259,8 +260,7 @@ export async function PATCH(
     }
 
     const user =
-      await db.orm.public.User
-        .where({
+      await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode", "referredById").where({
           id: userId,
         })
         .first();
@@ -282,17 +282,14 @@ export async function PATCH(
       typeof body.isActive ===
       "boolean"
     ) {
-      const updatedUser =
+      const updatedUserCount =
         await db.orm.public.User
-          .where({
-            id: userId,
-          })
-          .update({
-            isActive:
-              body.isActive,
+          .where({ id: userId })
+          .updateAndCount({
+            isActive: body.isActive,
           });
 
-      if (!updatedUser) {
+      if (updatedUserCount !== 1) {
         return NextResponse.json(
           {
             error:
@@ -302,6 +299,18 @@ export async function PATCH(
         );
       }
 
+      const updatedUser =
+        await db.orm.public.User
+          .select("id", "name", "email", "balance", "isActive", "referralCode")
+          .where({ id: userId })
+          .first();
+
+      if (!updatedUser) {
+        return NextResponse.json(
+          { error: "User status updated, but could not reload user details." },
+          { status: 500 }
+        );
+      }
       return NextResponse.json({
         message: body.isActive
           ? "User activated successfully."
@@ -406,16 +415,16 @@ export async function PATCH(
         currentBalance - amount;
     }
 
-    const updatedUser =
+    const updatedUserCount =
       await db.orm.public.User
         .where({
           id: userId,
         })
-        .update({
+        .updateAndCount({
           balance: newBalance,
         });
 
-    if (!updatedUser) {
+    if (updatedUserCount !== 1) {
       return NextResponse.json(
         {
           error:
@@ -425,6 +434,18 @@ export async function PATCH(
       );
     }
 
+    const updatedUser =
+      await db.orm.public.User
+        .select("id", "name", "email", "balance", "isActive", "referralCode")
+        .where({ id: userId })
+        .first();
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: "User updated, but could not reload user details." },
+        { status: 500 }
+      );
+    }
     const transactionType =
       balanceAction === "ADD"
         ? "ADMIN_BALANCE_ADD"
@@ -533,8 +554,7 @@ export async function DELETE(
     }
 
     const user =
-      await db.orm.public.User
-        .where({
+      await db.orm.public.User.select("id", "name", "email", "balance", "isActive", "referralCode", "referredById").where({
           id: userId,
         })
         .first();
@@ -604,3 +624,8 @@ export async function DELETE(
     );
   }
 }
+
+
+
+
+
