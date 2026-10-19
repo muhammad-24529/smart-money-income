@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { db, connectDB } from "@/lib/prisma";
 import { getUserSession } from "@/lib/auth/user";
 
@@ -16,6 +16,7 @@ export async function GET() {
     }
 
     const user = await db.orm.public.User
+      .select("id", "name", "email", "balance")
       .where({ id: userId })
       .first();
 
@@ -48,4 +49,7 @@ export async function GET() {
     );
   }
 }
+
+
+
 
