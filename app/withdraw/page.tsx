@@ -1,4 +1,4 @@
-﻿
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -332,7 +332,7 @@ export default function WithdrawPage() {
       return {
         badge:
           "bg-green-100 text-green-700",
-        icon: "Ã¢Å“â€¦",
+        icon: "X",
       };
     }
 
@@ -343,14 +343,14 @@ export default function WithdrawPage() {
       return {
         badge:
           "bg-red-100 text-red-700",
-        icon: "Ã¢ÂÅ’",
+        icon: "X",
       };
     }
 
     return {
       badge:
         "bg-yellow-100 text-yellow-700",
-      icon: "Ã¢ÂÂ³",
+      icon: "X",
     };
   }
 
@@ -697,7 +697,7 @@ export default function WithdrawPage() {
         <div className="mb-6">
 
           <h1 className="text-3xl font-bold text-gray-900">
-            Withdraw Funds Ã°Å¸â€™Â¸
+            Withdraw Funds Withdraw
           </h1>
 
           <p className="mt-2 text-gray-500">
@@ -743,7 +743,7 @@ export default function WithdrawPage() {
           <div className="flex gap-3">
 
             <div className="text-2xl">
-              Ã¢â€žÂ¹Ã¯Â¸Â
+              INFO
             </div>
 
             <div>
@@ -773,7 +773,7 @@ export default function WithdrawPage() {
             <div className="flex gap-3">
 
               <div className="text-2xl">
-                Ã¢Å“â€¦
+                OK
               </div>
 
               <div>
@@ -846,7 +846,7 @@ export default function WithdrawPage() {
             <div className="flex gap-3">
 
               <div className="text-2xl">
-                Ã¢Å¡Â Ã¯Â¸Â
+                ERROR
               </div>
 
               <div>
@@ -1106,7 +1106,7 @@ export default function WithdrawPage() {
 
             {submitting
               ? "Submitting Withdrawal..."
-              : "Ã°Å¸â€™Â¸ Submit Withdrawal"}
+              : "Submit Withdrawal"}
 
           </button>
 
@@ -1140,7 +1140,7 @@ export default function WithdrawPage() {
               }
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              Ã°Å¸â€â€ž Refresh
+              Refresh
             </button>
 
           </div>
@@ -1151,7 +1151,7 @@ export default function WithdrawPage() {
             <div className="mt-5 rounded-xl bg-gray-50 p-6 text-center">
 
               <div className="text-3xl">
-                Ã°Å¸â€™Â¸
+                Withdraw
               </div>
 
               <p className="mt-2 font-semibold text-gray-700">
@@ -1300,23 +1300,23 @@ export default function WithdrawPage() {
           <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-600">
 
             <li>
-              Ã¢â‚¬Â¢ Withdrawal requests are reviewed by the admin.
+              - Withdrawal requests are reviewed by the admin.
             </li>
 
             <li>
-              Ã¢â‚¬Â¢ Your wallet balance is deducted when the withdrawal request is submitted.
+              - Your wallet balance is deducted when the withdrawal request is submitted.
             </li>
 
             <li>
-              Ã¢â‚¬Â¢ Make sure your account information is correct.
+              - Make sure your account information is correct.
             </li>
 
             <li>
-              Ã¢â‚¬Â¢ Approved withdrawals will remain in your withdrawal history.
+              - Approved withdrawals will remain in your withdrawal history.
             </li>
 
             <li>
-              Ã¢â‚¬Â¢ Rejected withdrawals will be refunded to your wallet.
+              - Rejected withdrawals will be refunded to your wallet.
             </li>
 
           </ul>
@@ -1333,7 +1333,7 @@ export default function WithdrawPage() {
             href="/dashboard"
             className="text-sm font-semibold text-blue-600 hover:text-blue-700"
           >
-            Ã¢â€ Â Back to Dashboard
+            Back to Dashboard
           </a>
 
         </div>
