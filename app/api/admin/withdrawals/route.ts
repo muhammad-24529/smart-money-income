@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
+import { Temporal } from "@js-temporal/polyfill";
 import { db, connectDB } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 
@@ -223,7 +224,7 @@ export async function PATCH(
           })
           .update({
             status: "APPROVED",
-            approvedAt: new Date(),
+            approvedAt: Temporal.Now.instant(),
             referenceId:
               referenceId ||
               withdrawal.referenceId,
@@ -523,6 +524,7 @@ export async function PATCH(
     );
   }
 }
+
 
 
 
